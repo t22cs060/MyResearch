@@ -14,7 +14,7 @@ import numpy as np
 from sklearn.metrics import classification_report
 
 # === データの読み込み
-def load_pubmed_rct(data_dir="PubMed_20k_RCT", split="train"):
+def load_pubmed_rct(data_dir="pre_test/PubMed_20k_RCT", split="train"):
     """
     PubMed RCT形式のファイルを読み込む
     各行は [LABEL]<tab>[SENTENCE]
@@ -25,22 +25,27 @@ def load_pubmed_rct(data_dir="PubMed_20k_RCT", split="train"):
 
     abstracts, labels = [], []
     for line in lines:
-        if line.strip() == "":
+        line = line.strip()
+        if line == "" or line.startswith("###"):
+            continue  # 空行またはアブストラクトID行をスキップ
+        try:
+            label, sentence = line.split("\t")
+            abstracts.append(sentence)
+            labels.append(label)
+        except ValueError:
+            print(f"[スキップ] 無効な行: {line}")
             continue
-        label, sentence = line.strip().split("\t")
-        abstracts.append(sentence)
-        labels.append(label)
-    
+
     return pd.DataFrame({"text": abstracts, "label": labels})
 
+# === load
 df = load_pubmed_rct(split="train")
-
 
 # === ラベルを数値化
 label_encoder = LabelEncoder()
 df["label_id"] = label_encoder.fit_transform(df["label"])
-label2id = dict(zip(label_encoder.classes_, label_encoder.transform(label_encoder.classes_)))
-id2label = {v: k for k, v in label2id.items()}
+label2id = {str(label): int(idx) for label, idx in zip(label_encoder.classes_, label_encoder.transform(label_encoder.classes_))}
+id2label = {int(idx): str(label) for label, idx in label2id.items()}
 
 
 # === データを訓練・検証に分割
@@ -81,7 +86,11 @@ training_args = TrainingArguments(
     per_device_train_batch_size=16,
     per_device_eval_batch_size=64,
     warmup_steps=500,
+<<<<<<< HEAD
     evaluation_strategy="epoch",
+=======
+    eval_strategy="epoch",
+>>>>>>> model results
     save_strategy="epoch",
     logging_dir="./logs",
     logging_steps=10,
@@ -129,4 +138,8 @@ with torch.no_grad():
 
 predicted_label = model.config.id2label[predicted_class_id]
 print(f"Predicted label: {predicted_label}")
+<<<<<<< HEAD
 """
+=======
+"""
+>>>>>>> model results

@@ -18,6 +18,7 @@ ENV/
 env.bak/
 venv.bak/
 elife/
+PubMed_20k_RCT/
 
 pip-selfcheck.json
 © 2021 GitHub, Inc.
