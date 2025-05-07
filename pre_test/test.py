@@ -11,17 +11,19 @@ import spacy    # For parsing grammar-dependent labels
 import seaborn as sns
 import matplotlib.pyplot as plt
 import os
+import datetime
+
 
 # === Definition someting
 train_json_path =   "./pre_test/elife/train.json"
 test_json_path =    "./pre_test/elife/test.json"
 
 # --- nltk
-nltk.data.path.append('/home/kajino/nltk_data')
+nltk.data.path.append('/home/kajino/nltk_data') # 環境ごとに変更
 # --- spacy
 spacy_nlp = spacy.load("en_core_web_sm")
 # --- Stanza
-stanza.download('en', quiet=True)
+stanza.download('en')
 stanza_nlp = stanza.Pipeline(lang='en', processors='tokenize,pos,lemma', verbose=False)
 
 # --- SciBERT
@@ -98,7 +100,7 @@ class FeatureExtractor:
 # === function to read json
 def load_json(path):
     with open(path, 'r', encoding='utf-8') as f:
-        print("--- json data retrieved")
+        print(f"--- json data retrieved, {datetime.datetime.now()}")
         return json.load(f)
 
 
@@ -108,13 +110,13 @@ def sep_abstract_summary(data):
     for article in data:
         abstracts.append(' '.join(article.get('abstract', [])))
         summaries.append(' '.join(article.get('summary', [])))
-    print("--- abstracts and summaries retrieved ")
+    print(f"--- abstracts and summaries retrieved, {datetime.datetime.now()} ")
     return abstracts, summaries
 
 
 # === 特徴量を取得してlistにまとめる
 def get_records(abst, summ):
-    print("--- Extracting features")
+    print(f"--- Extracting features, {datetime.datetime.now()}")
     records = []
     for a, s in zip(abst, summ):
         af = FeatureExtractor(a, 'abstract')
@@ -126,7 +128,7 @@ def get_records(abst, summ):
         a_feat['ppl'] = af.compute_ppl()
         s_feat['ppl'] = sf.compute_ppl()
         records.extend([a_feat, s_feat])
-    print("--- Done\n")
+    print(f"--- Done, {datetime.datetime.now()}\n")
     return records
 
 
@@ -154,17 +156,17 @@ def results_prot(df):
         plt.xlabel(feat)
         plt.ylabel('Density')
         plt.tight_layout()
-        plt.savefig(f"pre_test/figule/{feat}_distribution.png") 
+        plt.savefig(f"pre_test/figure/{feat}_distribution.png") 
         plt.close() 
     return df
 
 
 # === 汎用処理エントリポイント
 def process_dataset(json_path, output_csv):
-    data = load_json(json_path)                         # json data取得
-    abstracts, summaries = sep_abstract_summary(data)   # abst, summに分離
-    records = get_records(abstracts, summaries)         # 特徴量取得
-    save_features_to_csv(records, output_csv)           # 結果をcsvに保存
+    #data = load_json(json_path)                         # json data取得
+    #abstracts, summaries = sep_abstract_summary(data)   # abst, summに分離
+    #records = get_records(abstracts, summaries)         # 特徴量取得
+    #save_features_to_csv(records, output_csv)           # 結果をcsvに保存
 
     _, df = load_csv_as_records(output_csv) # 保存内容を読み込む
     results_prot(df)                        # プロット
