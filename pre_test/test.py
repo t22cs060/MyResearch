@@ -3,7 +3,9 @@ import pandas as pd
 import nltk
 from nltk.tokenize import sent_tokenize, word_tokenize
 import torch
-from transformers import AutoTokenizer, AutoModelForMaskedLM, AutoModelForCausalLM
+import torch.nn.functional as F
+from torch import nn
+from transformers import AutoTokenizer, AutoModelForMaskedLM, AutoModelForCausalLM, AutoModel
 import stanza
 import math
 import textstat # For acquisition of FKGL, FRE
@@ -19,10 +21,14 @@ train_json_path =   "./pre_test/elife/train.json"
 test_json_path =    "./pre_test/elife/test.json"
 
 # --- nltk
+from nltk.tokenize.punkt import PunktSentenceTokenizer
 nltk.data.path.append('/home/kajino/nltk_data') # 環境ごとに変更
-# --- spacy
+tokenizer = PunktSentenceTokenizer(nltk.data.load("tokenizers/punkt/english.pickle"))
+def sent_tokenize_fixed(text):
+    return tokenizer.tokenize(text)
+
+# --- spacy and Stanza
 spacy_nlp = spacy.load("en_core_web_sm")
-# --- Stanza
 stanza.download('en')
 stanza_nlp = stanza.Pipeline(lang='en', processors='tokenize,pos,lemma', verbose=False)
 
@@ -30,10 +36,59 @@ stanza_nlp = stanza.Pipeline(lang='en', processors='tokenize,pos,lemma', verbose
 tokenizer = AutoTokenizer.from_pretrained("allenai/scibert_scivocab_uncased")
 scibert_model = AutoModelForMaskedLM.from_pretrained("allenai/scibert_scivocab_uncased")
 scibert_model.eval()
+
 # --- BioGPT（causal LM用）
 biogpt_tokenizer = AutoTokenizer.from_pretrained("microsoft/BioGPT")
 biogpt_model = AutoModelForCausalLM.from_pretrained("microsoft/BioGPT")
 biogpt_model.eval()
+
+label_names = ["Background", "Objective", "Methods", "Results", "Conclusions"]
+tokenizer_rhet = AutoTokenizer.from_pretrained("bert-base-uncased")
+
+
+# --- Sentence classification model definition
+class SentenceClassifier(nn.Module):
+    def __init__(self, bert_model_name="bert-base-uncased", hidden_size=256, num_labels=5):
+        super(SentenceClassifier, self).__init__()
+        self.bert = AutoModel.from_pretrained(bert_model_name)
+        self.bilstm = nn.LSTM(input_size=self.bert.config.hidden_size,
+                              hidden_size=hidden_size,
+                              num_layers=1,
+                              batch_first=True,
+                              bidirectional=True)
+        self.classifier = nn.Linear(hidden_size * 2, num_labels)
+
+    def forward(self, input_ids, attention_mask):
+        B, T, L = input_ids.size()
+        input_ids = input_ids.view(-1, L)
+        attention_mask = attention_mask.view(-1, L)
+        outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
+        cls_embeddings = outputs.last_hidden_state[:, 0, :]
+        cls_seq = cls_embeddings.view(B, T, -1)
+        lstm_out, _ = self.bilstm(cls_seq)
+        logits = self.classifier(lstm_out)
+        return logits
+
+# --- Load classifier model
+label_names = ["Background", "Objective", "Methods", "Results", "Conclusions"]
+tokenizer_rhet = AutoTokenizer.from_pretrained("bert-base-uncased")
+rhet_model = SentenceClassifier("bert-base-uncased")
+rhet_model.load_state_dict(torch.load("sequential_model.pt", map_location="cuda"))
+rhet_model.eval()
+
+# === 1つのabstractに対してラベルを返す
+def predict_labels(sentence_list):
+    max_len = 128
+    encoded = tokenizer_rhet(sentence_list, padding='max_length', truncation=True,
+                             max_length=max_len, return_tensors="pt")
+
+    input_ids = encoded["input_ids"].unsqueeze(0)           # (1, T, L)
+    attention_mask = encoded["attention_mask"].unsqueeze(0) # (1, T, L)
+
+    with torch.no_grad():
+        logits = rhet_model(input_ids, attention_mask)[0]
+        preds = torch.argmax(F.softmax(logits, dim=-1), dim=-1).tolist()
+    return [label_names[i] for i in preds]
 
 
 # === 特徴量抽出のクラス定義
@@ -95,6 +150,15 @@ class FeatureExtractor:
             outputs = biogpt_model(**inputs, labels=inputs["input_ids"])
             loss = outputs.loss
         return math.exp(loss.item())
+    
+    # --- BG ratio
+    def compute_bg_ratio(self):
+        sentences = sent_tokenize_fixed(self.text)
+        predicted = predict_labels(sentences)
+        if not predicted:
+            return 0.0
+        bg_count = sum(1 for label in predicted if label == "Background")
+        return bg_count / len(predicted)
 
 
 # === function to read json
@@ -123,10 +187,12 @@ def get_records(abst, summ):
         sf = FeatureExtractor(s, 'summary')
         a_feat = af.get_basic_features()
         s_feat = sf.get_basic_features()
-        a_feat['cwe'] = af.compute_cwe()
-        s_feat['cwe'] = sf.compute_cwe()
-        a_feat['ppl'] = af.compute_ppl()
-        s_feat['ppl'] = sf.compute_ppl()
+        #a_feat['cwe'] = af.compute_cwe()
+        #s_feat['cwe'] = sf.compute_cwe()
+        #a_feat['ppl'] = af.compute_ppl()
+        #s_feat['ppl'] = sf.compute_ppl()
+        a_feat['bg_ratio'] = af.compute_bg_ratio()
+        s_feat['bg_ratio'] = sf.compute_bg_ratio()
         records.extend([a_feat, s_feat])
     print(f"--- Done, {datetime.datetime.now()}\n")
     return records
@@ -147,7 +213,7 @@ def load_csv_as_records(filename):
 
 # === 特徴量ごとにプロット
 def results_prot(df):
-    features = ['length', 'avg_sentence_length', 'FKGL', 'FRE', 'avg_clauses','cwe', 'ppl']
+    features = ['length', 'avg_sentence_length', 'FKGL', 'FRE', 'avg_clauses','cwe', 'ppl', 'bg_ratio']
 
     for feat in features:
         plt.figure(figsize=(8, 5))
@@ -163,10 +229,10 @@ def results_prot(df):
 
 # === 汎用処理エントリポイント
 def process_dataset(json_path, output_csv):
-    #data = load_json(json_path)                         # json data取得
-    #abstracts, summaries = sep_abstract_summary(data)   # abst, summに分離
-    #records = get_records(abstracts, summaries)         # 特徴量取得
-    #save_features_to_csv(records, output_csv)           # 結果をcsvに保存
+    data = load_json(json_path)                         # json data取得
+    abstracts, summaries = sep_abstract_summary(data)   # abst, summに分離
+    records = get_records(abstracts, summaries)         # 特徴量取得
+    save_features_to_csv(records, output_csv)           # 結果をcsvに保存
 
     _, df = load_csv_as_records(output_csv) # 保存内容を読み込む
     results_prot(df)                        # プロット
