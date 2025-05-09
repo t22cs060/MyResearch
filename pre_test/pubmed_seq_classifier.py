@@ -27,6 +27,34 @@ def load_pubmed_rct(path):
         abstracts.append(current_abstract)
     return abstracts
 
+# ---------- カスタム collate_fn ----------
+def collate_fn(batch):
+    max_sentences = max(item["input_ids"].shape[0] for item in batch)
+
+    def pad_tensor(tensor, pad_len, pad_value=0):
+        if tensor.shape[0] == pad_len:
+            return tensor
+        pad_size = [pad_len - tensor.shape[0]] + list(tensor.shape[1:])
+        return torch.cat([tensor, torch.full(pad_size, pad_value, dtype=tensor.dtype)], dim=0)
+
+    input_ids = torch.stack([
+        pad_tensor(item["input_ids"], max_sentences, pad_value=0)
+        for item in batch
+    ])
+    attention_mask = torch.stack([
+        pad_tensor(item["attention_mask"], max_sentences, pad_value=0)
+        for item in batch
+    ])
+    labels = torch.stack([
+        pad_tensor(item["labels"], max_sentences, pad_value=-100)  # ← ignore_index に対応
+        for item in batch
+    ])
+
+    return {
+        "input_ids": input_ids.long(),         # (B, T, L)
+        "attention_mask": attention_mask.long(),
+        "labels": labels.long()                # ラベルに -100 が入っている部分は無視される
+    }
 # ---------- データセット ----------
 class PubMedRCTDataset(Dataset):
     def __init__(self, abstracts, tokenizer, label_encoder, max_len=128):
@@ -120,15 +148,16 @@ def main():
 
     # データセットとローダー
     dataset = PubMedRCTDataset(abstracts, tokenizer, label_encoder)
-    dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=collate_fn)
+
 
     # モデルと最適化設定
     model = SequentialSentenceClassifier(num_labels=num_labels).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=2e-5)
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(ignore_index=-100)
 
     # トレーニング
-    for epoch in range(3):
+    for epoch in range(10):
         loss = train(model, dataloader, optimizer, criterion, device)
         print(f"Epoch {epoch + 1}, Loss: {loss:.4f}")
 
