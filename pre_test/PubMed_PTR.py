@@ -86,11 +86,7 @@ training_args = TrainingArguments(
     per_device_train_batch_size=16,
     per_device_eval_batch_size=64,
     warmup_steps=500,
-<<<<<<< HEAD
-    evaluation_strategy="epoch",
-=======
     eval_strategy="epoch",
->>>>>>> model results
     save_strategy="epoch",
     logging_dir="./logs",
     logging_steps=10,
@@ -138,8 +134,4 @@ with torch.no_grad():
 
 predicted_label = model.config.id2label[predicted_class_id]
 print(f"Predicted label: {predicted_label}")
-<<<<<<< HEAD
 """
-=======
-"""
->>>>>>> model results
