@@ -12,22 +12,20 @@ pyvenv.cfg
 # Environments
 .env
 .venv
+.pt
+.md
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+data/
 elife/
+plos/
 PubMed_20k_RCT/
 
 pip-selfcheck.json
 © 2021 GitHub, Inc.
 results/
 scibert_pubmed_rct_model/
-<<<<<<< HEAD
 scibert_pubmed_rct_model.zip
-=======
-scibert_pubmed_rct_model.zip
->>>>>>> 6ebbeb1fcdf827939615bac9de334fc757a9b021
-.pt
-.pt
