@@ -20,12 +20,10 @@ ENV/
 env.bak/
 venv.bak/
 data/
-elife/
-plos/
+
 PubMed_20k_RCT/
 
 pip-selfcheck.json
 © 2021 GitHub, Inc.
-results/
 scibert_pubmed_rct_model/
 scibert_pubmed_rct_model.zip
