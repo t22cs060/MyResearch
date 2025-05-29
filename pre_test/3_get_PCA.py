@@ -214,11 +214,11 @@ def create_pca_plots(pca_df, explained_variance_ratio, loadings_df, output_dir, 
 # --- main func
 def main():  
     #csv_path = "pre_test/marged_elife_features.csv"
-    #output_dir = "results_PCA/elife"
+    #output_dir = "results/PCA/elife"
     #csv_path = "pre_test/marged_plos_features.csv"
-    #output_dir = "results_PCA/plos"
+    #output_dir = "results/PCA/plos"
     csv_path = "pre_test/marged_features.csv"
-    output_dir = "results_PCA/abst"
+    output_dir = "results/PCA/abst"
     target = "abstract"
     n_components = 10 # 主成分数
 
