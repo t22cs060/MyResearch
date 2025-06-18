@@ -131,8 +131,12 @@ def analyze_csv_structure(input_file):
 # 使用例
 if __name__ == "__main__":
     # ファイルパスを指定
-    input_file = "pre_test/marged_features.csv"  # 入力ファイル名
-    output_file = "pre_test/formatted_features.csv"  # 出力ファイル名
+    output_file = "pre_test/formatted_ea_features.csv"  # 出力ファイル名
+    input_file = "pre_test/marged_ea_features.csv"  # 入力ファイル名
+    #output_file = "pre_test/formatted_cells_features.csv"  # 出力ファイル名
+    #input_file = "pre_test/marged_cells_features.csv"  # 入力ファイル名
+    #input_file = "pre_test/marged_features.csv"  # 入力ファイル名
+    #output_file = "pre_test/formatted_features.csv"  # 出力ファイル名
     
     try:
         # まずCSV構造を分析

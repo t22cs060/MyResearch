@@ -19,13 +19,17 @@ def load_and_prepare_data(input_csv):
     # abstract, summary-elife, summary-plosの3クラス
     df['label'] = df['type'].map({
         'abstract': 0,
-        'summary-elife': 1, 
-        'summary-plos': 2
+        'summary': 1
+        #'summary-elife': 1, 
+        #'summary-plos': 2
     })
     
     # 特徴量カラムを抽出（doc_id, type, labelを除く）
     feature_columns = [col for col in df.columns if col not in ['doc_id', 'type', 'label']]
-    
+    """
+    if 'length' in feature_columns:
+        feature_columns.remove('length')
+    """
     print(f"Number of samples: {len(df)}")
     print(f"Feature columns: {feature_columns}")
     print(f"Class distribution:")
@@ -118,8 +122,12 @@ def run_all_combinations(df, comb, feature_columns, output_dir):
 def main():
     """メイン実行関数"""
     # ファイルパスを静的に指定
-    input_csv = "pre_test/formatted_features.csv"
-    output_dir = "pre_test/results"
+    #input_csv = "pre_test/formatted_features.csv"
+    #output_dir = "pre_test/results"
+    #input_csv = "pre_test/formatted_cells_features.csv"
+    #output_dir = "pre_test/results/logistic"
+    input_csv = "pre_test/formatted_ea_features.csv"
+    output_dir = "pre_test/results/logistic/ea"
     comb = 4
 
     print("Starting logistic regression classification analysis...")

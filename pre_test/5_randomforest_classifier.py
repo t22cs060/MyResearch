@@ -22,7 +22,8 @@ def load_and_prepare_data(input_csv):
         raise RuntimeError(f"{datetime.datetime.now()}, Failed to read CSV file: {e}")
 
     # ラベルを数値に変換
-    label_map = { 'abstract': 0, 'summary-elife': 1, 'summary-plos': 2 }
+    #label_map = { 'abstract': 0, 'summary-elife': 1, 'summary-plos': 2 }
+    label_map = { 'abstract': 0, 'summary': 1 }
     df['label'] = df['type'].map(label_map)
 
     if df['label'].isnull().any():
@@ -30,6 +31,9 @@ def load_and_prepare_data(input_csv):
 
     # 特徴量カラムを抽出（doc_id, type, labelを除く）
     feature_columns = [col for col in df.columns if col not in ['doc_id', 'type', 'label']]
+
+    #if 'length' in feature_columns:
+    #    feature_columns.remove('length')
 
     print(f"--- Number of samples: {len(df)}")
     print(f"--- Extracted feature columns: {feature_columns}")
@@ -88,8 +92,9 @@ def train_and_evaluate_rf(X_train, X_test, y_train, y_test, feature_combo, outpu
             os.makedirs(shap_dir, exist_ok=True)
 
             # クラス数を確認
-            class_names = ["abstract", "summary-elife", "summary-plos"]
-            
+            #class_names = ["abstract", "summary-elife", "summary-plos"]
+            class_names = ["abstract", "summary"]
+
             # SHAP値の形状をチェックして処理方法を決定
             if isinstance(shap_values, np.ndarray) and len(shap_values.shape) == 3:
                 # 新しい形式: (n_samples, n_features, n_classes)
@@ -258,7 +263,8 @@ def train_and_evaluate_rf(X_train, X_test, y_train, y_test, feature_combo, outpu
         "confusion_matrix": cm.tolist(),
         "feature_importances": model.feature_importances_.tolist(),
         "accuracy": model.score(X_test_scaled, y_test),
-        "class_labels": ["abstract", "summary-elife", "summary-plos"]
+        #"class_labels": ["abstract", "summary-elife", "summary-plos"]
+        "class_labels": ["abstract", "summary"]
     }
 
     return result
@@ -328,8 +334,12 @@ def process_all_combinations(df, feature_columns, num_features, output_dir):
     return results
 
 def main():
-    input_csv = "pre_test/formatted_features.csv"
-    output_dir = "pre_test/results/randomforest"
+    #input_csv = "pre_test/formatted_features.csv"
+    #output_dir = "pre_test/results/randomforest"
+    #input_csv = "pre_test/formatted_cells_features.csv"
+    #output_dir = "pre_test/results/randomforest/cells"
+    input_csv = "pre_test/formatted_ea_features.csv"
+    output_dir = "pre_test/results/randomforest/ea"
     num_features = 14
 
     print("=== Random Forest Classification Analysis ===")

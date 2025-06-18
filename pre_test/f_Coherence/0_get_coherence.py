@@ -40,6 +40,17 @@ def extract_abstract_summary(data):
         ids.append(doc_id)
     return ids, abstracts, summaries
 
+# === CSV読み込み
+def load_csv(path):
+    print(f"{datetime.datetime.now()}, CSV loaded: {path}")
+    df = pd.read_csv(path)
+    ids = df.index.astype(str).tolist()
+    abstracts = df['abs_text'].fillna('').tolist()
+    summaries = df['pls_text'].fillna('').tolist()
+    print(f"{datetime.datetime.now()}, Abstracts and summaries extracted from CSV")
+    return ids, abstracts, summaries
+
+
 # SBERTによる隣接文類似度の平均
 def compute_avg_adjacent_similarity(text):
     sentences = [sent.text for sent in nlp(text).sents]
@@ -63,8 +74,9 @@ def compute_pdtb_relation_coverage(text):
 def process_features(json_path, output_csv):
     import numpy as np
 
-    data = load_json(json_path)
-    ids, abstracts, summaries = extract_abstract_summary(data)
+    #data = load_json(json_path)
+    #ids, abstracts, summaries = extract_abstract_summary(data)
+    ids, abstracts, summaries = load_csv(json_path)
 
     print(f"{datetime.datetime.now()}, Computing SBERT + PDTB features...")
     rows = []
@@ -91,6 +103,10 @@ def process_features(json_path, output_csv):
 if __name__ == "__main__":
     #input_json = "pre_test/data/elife/train.json"
     #output_csv = "pre_test/f_Coherence/pdtb_elife_features.csv"
-    input_json = "pre_test/data/plos/train.json"
-    output_csv = "pre_test/f_Coherence/pdtb_plos_features.csv"
+    #input_json = "pre_test/data/plos/train.json"
+    #output_csv = "pre_test/f_Coherence/pdtb_plos_features.csv"
+    #input_json = "pre_test/data/CELLS_metadata/train_meta.csv"
+    #output_csv = "pre_test/f_Coherence/pdtb_cells_features.csv"
+    input_json = "pre_test/data/data/processed_output.csv"
+    output_csv = "pre_test/f_Coherence/pdtb_ea_features.csv"
     process_features(input_json, output_csv)
