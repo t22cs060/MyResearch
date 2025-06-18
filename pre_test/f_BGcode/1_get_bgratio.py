@@ -13,6 +13,13 @@ import numpy as np
 #OUTPUT_PATH = "pre_test/f_BGcode/label_ratios.csv"
 JSON_PATH = "./pre_test/data/plos/train.json"
 OUTPUT_PATH = "pre_test/f_BGcode/label_plos_ratios.csv"
+
+# CSV入力用
+#CSV_PATH = "pre_test/data/CELLS_metadata/train_meta.csv"
+#OUTPUT_PATH = "pre_test/f_BGcode/bg_cells_features.csv"
+CSV_PATH = "pre_test/data/data/processed_output.csv"
+OUTPUT_PATH = "pre_test/f_BGcode/bg_ea_features.csv"
+
 MODEL_PATH = "pre_test/f_BGcode/sequential_model_15.pt"
 LABEL_NAMES = ["Background", "Objective", "Methods", "Results", "Conclusions"]
 ID2LABEL = {i: label for i, label in enumerate(LABEL_NAMES)}
@@ -128,10 +135,37 @@ def save_ratios_to_csv(results, filename = OUTPUT_PATH):
         writer.writeheader()
         writer.writerows(results)
 
+
+def compute_label_ratios_from_csv(csv_path):
+    import pandas as pd
+
+    df = pd.read_csv(csv_path)
+    results = []
+
+    for idx, row in df.iterrows():
+        doc_id = f"doc_{idx+1}"
+        abstract = sent_tokenize(str(row.get("abs_text", "")))
+        summary = sent_tokenize(str(row.get("pls_text", "")))
+
+        abstract_ratios = compute_label_ratios(abstract)
+        summary_ratios = compute_label_ratios(summary)
+
+        entry = {"doc_id": doc_id}
+        for label in LABEL_NAMES:
+            entry[f"abstract_{label.lower()}_ratio"] = abstract_ratios[label]
+            entry[f"summary_{label.lower()}_ratio"] = summary_ratios[label]
+        results.append(entry)
+
+    return results
+
 # === 実行 ===
 if __name__ == '__main__':
     print("=== Computing Label Ratios for Abstracts and Summaries ===")
-    ratios = compute_label_ratios_from_json(JSON_PATH)
+
+    #ratios = compute_label_ratios_from_json(JSON_PATH)
+
+    ratios = compute_label_ratios_from_csv(CSV_PATH)
+
     for res in ratios:
         print(f"Document ID: {res['doc_id']}")
         for label in LABEL_NAMES:

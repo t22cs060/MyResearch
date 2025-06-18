@@ -52,10 +52,21 @@ def extract_abstract_summary(data):
         ids.append(doc_id)
     return ids, abstracts, summaries
 
+# === CSV読み込み
+def load_csv(path):
+    print(f"{datetime.datetime.now()}, CSV loaded: {path}")
+    df = pd.read_csv(path)
+    ids = df.index.astype(str).tolist()
+    abstracts = df['abs_text'].fillna('').tolist()
+    summaries = df['pls_text'].fillna('').tolist()
+    print(f"{datetime.datetime.now()}, Abstracts and summaries extracted from CSV")
+    return ids, abstracts, summaries
+
 # --- メイン処理
 def process_cwe(json_path, output_csv):
-    data = load_json(json_path)
-    ids, abstracts, summaries = extract_abstract_summary(data)
+    #data = load_json(json_path)
+    #ids, abstracts, summaries = extract_abstract_summary(data)
+    ids, abstracts, summaries = load_csv(json_path)
 
     print(f"{datetime.datetime.now()}, Computing CWE features...")
     rows = []
@@ -76,6 +87,10 @@ def process_cwe(json_path, output_csv):
 if __name__ == "__main__":
     #input_json = "pre_test/data/elife/train.json"
     #output_csv = "pre_test/f_CWEcode/cwe_elife_features.csv"
-    input_json = "pre_test/data/plos/train.json"
-    output_csv = "pre_test/f_CWEcode/cwe_plos_features.csv"
+    #input_json = "pre_test/data/plos/train.json"
+    #output_csv = "pre_test/f_CWEcode/cwe_plos_features.csv"
+    #input_json = "pre_test/data/CELLS_metadata/train_meta.csv"
+    #output_csv = "pre_test/f_CWEcode/cwe_cells_features.csv"
+    input_json = "pre_test/data/data/processed_output.csv"
+    output_csv = "pre_test/f_CWEcode/cwe_ea_features.csv"
     process_cwe(input_json, output_csv)

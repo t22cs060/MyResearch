@@ -162,17 +162,37 @@ def main():
         "pre_test/f_PPLcode/ppl_plos_features.csv",
         ] 
     output_file = "pre_test/marged_plos_features.csv"
+
+    input_files = [
+        "pre_test/f_BASECcode/basic_cells_features.csv",
+        "pre_test/f_Coherence/pdtb_cells_features.csv",
+        "pre_test/f_CWEcode/cwe_cells_features.csv",
+        "pre_test/f_BGcode/bg_cells_features.csv",
+        "pre_test/f_PPLcode/ppl_cells_features.csv",
+        ] 
+    output_file = "pre_test/marged_cells_features.csv"
     """
 
+    input_files = [
+        "pre_test/f_BASECcode/basic_ea_features.csv",
+        "pre_test/f_Coherence/pdtb_ea_features.csv",
+        "pre_test/f_CWEcode/cwe_ea_features.csv",
+        "pre_test/f_BGcode/bg_ea_features.csv",
+        "pre_test/f_PPLcode/ppl_ea_features.csv",
+        ] 
+    output_file = "pre_test/marged_ea_features.csv"
+
+    """
     input_files = ["pre_test/marged_elife_features.csv", "pre_test/marged_plos_features.csv"]
     output_file = "pre_test/marged_features.csv"
 
     input_file = "input_data.csv"  # 入力ファイル名
     output_file = "output_data.csv"  # 出力ファイル名
-    
+    """
+
     print(f"{datetime.datetime.now()}, input files: {input_files}")
-    #merge_csv_files(input_files, output_file) # idによる結合
-    concatenate_csv_simple(input_files, output_file) # 縦結合
+    merge_csv_files(input_files, output_file) # idによる結合
+    #concatenate_csv_simple(input_files, output_file) # 縦結合
 
 
 if __name__ == "__main__":

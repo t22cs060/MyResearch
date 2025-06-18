@@ -38,7 +38,8 @@ class FeatureExtractor:
         for sent in spacy_nlp(self.text).sents:
             total_clauses += sum(1 for token in sent if token.dep_ in ['advcl', 'ccomp', 'xcomp', 'relcl', 'conj'])
         return total_clauses / len(self.sentences) if self.sentences else 0
-    
+
+
 # === JSON読み込み
 def load_json(path):
     with open(path, 'r', encoding='utf-8') as f:
@@ -56,6 +57,31 @@ def extract_doc_texts(data):
         summaries.append(' '.join(article.get('summary', [])))
     print(f"{datetime.datetime.now()}, Abstracts and summaries extracted")
     return ids, abstracts, summaries
+
+
+# === CSV読み込み
+def load_csv(path):
+    print(f"{datetime.datetime.now()}, CSV loaded: {path}")
+    return pd.read_csv(path)
+
+
+# === CSVからテキスト抽出
+def extract_doc_texts_from_csv(df):
+    ids = df.index.astype(str).tolist()
+    abstracts = df['abs_text'].fillna('').tolist()
+    summaries = df['pls_text'].fillna('').tolist()
+    print(f"{datetime.datetime.now()}, Abstracts and summaries extracted from CSV")
+    return ids, abstracts, summaries
+
+
+# === CSVデータセットの処理
+def process_csv_dataset(csv_path, output_csv):
+    df = load_csv(csv_path)
+    doc_ids, abstracts, summaries = extract_doc_texts_from_csv(df)
+    records = extract_features_per_doc(doc_ids, abstracts, summaries)
+    output_df = pd.DataFrame(records)
+    output_df.to_csv(output_csv, index=False)
+    print(f"{datetime.datetime.now()}, Data saved: {output_csv}")
 
 
 # === 特徴量抽出・構造化
@@ -106,9 +132,14 @@ def process_dataset(json_path, output_csv):
 if __name__ == '__main__':
     #input_json = "pre_test/data/elife/train.json"
     #output_csv = "pre_test/f_BASECcode/basic_elife_features.csv"
-    input_json = "pre_test/data/plos/train.json"
-    output_csv = "pre_test/f_BASECcode/basic_plos_features.csv"
+    #input_json = "pre_test/data/plos/train.json"
+    #output_csv = "pre_test/f_BASECcode/basic_plos_features.csv"
+    #input_csv = "pre_test/data/CELLS_metadata/train_meta.csv"
+    #output_csv = "pre_test/f_BASECcode/basic_cells_features.csv"
+    input_csv = "pre_test/data/data/processed_output.csv"
+    output_csv = "pre_test/f_BASECcode/basic_ea_features.csv"
 
     print(f"{datetime.datetime.now()}, START")
-    process_dataset(input_json, output_csv)
+    #process_dataset(input_json, output_csv)
+    process_csv_dataset(input_csv, output_csv)
     print(f"{datetime.datetime.now()}, DONE")

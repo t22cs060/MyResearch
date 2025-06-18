@@ -1,0 +1,57 @@
+[
+  {
+    "feature_combination": [
+      "FKGL",
+      "FRE",
+      "avg_clauses",
+      "avg_sentence_length",
+      "background_ratio",
+      "conclusions_ratio",
+      "cwe",
+      "methods_ratio",
+      "objective_ratio",
+      "pdtb_coverage",
+      "ppl",
+      "results_ratio",
+      "sbert_sim"
+    ],
+    "confusion_matrix": [
+      [
+        6718,
+        20,
+        1998
+      ],
+      [
+        42,
+        1087,
+        175
+      ],
+      [
+        2246,
+        104,
+        5082
+      ]
+    ],
+    "feature_importances": [
+      0.09502868550348596,
+      0.12902613528531118,
+      0.07845209620750078,
+      0.0795725195350117,
+      0.10931191976003303,
+      0.058004653132786604,
+      0.10420315527350833,
+      0.0407868345520999,
+      0.05538294682318519,
+      0.04622199897468442,
+      0.08305280928290314,
+      0.042996938046507636,
+      0.07795930762298227
+    ],
+    "accuracy": 0.7375801282051282,
+    "class_labels": [
+      "abstract",
+      "summary-elife",
+      "summary-plos"
+    ]
+  }
+]
